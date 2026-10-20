@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SLO HIGH ASB A&B's Leaderboard</title>
 
-    <!-- ALL STYLES (BLACK & GOLD THEME) -->
+    <!-- BLACK & GOLD THEME STYLING -->
     <style>
         :root {
             --gold: #D4AF37;
@@ -97,43 +97,57 @@
                 </tr>
             </thead>
             <tbody id="leaderboard-body">
-                <tr><td colspan="3">Loading data...</td></tr>
+                <tr><td colspan="3">Loading leaderboard...</td></tr>
             </tbody>
         </table>
     </div>
 
-    <!-- ALL JAVASCRIPT (DATA FETCHING) -->
+    <!-- JAVASCRIPT: FETCHES CSV, SORTS BY POINTS, AND BUILDS TABLE -->
     <script>
         // PASTE YOUR PUBLISHED GOOGLE SHEET CSV LINK HERE
-        const sheetUrl = https://docs.google.com/spreadsheets/d/e/2PACX-1vRRmEdeO15K37xeVjvyVr8KZ0UZItNr4i4NB8aY9y2vGSeH5mWDyWjK0vSc6vObz-Ufa2z1nFBMIXGG/pubhtml;
+        const sheetUrl = 'YOUR_PUBLISHED_CSV_LINK_HERE';
 
         async function fetchLeaderboardData() {
             try {
                 const response = await fetch(sheetUrl);
                 const data = await response.text();
                 
+                // Split CSV into rows
                 const rows = data.split('\n').map(row => row.split(','));
-                const tableBody = document.getElementById('leaderboard-body');
-                
-                tableBody.innerHTML = '';
+                let students = [];
 
+                // Loop through rows (skip header at index 0)
                 for (let i = 1; i < rows.length; i++) {
                     const row = rows[i];
                     
-                    if (row.length >= 2 && row[0].trim() !== '') {
+                    // Ensure the row has at least 3 columns (Name, Email, Points)
+                    if (row.length >= 3 && row[0].trim() !== '') {
                         const name = row[0].replace(/"/g, '').trim();
-                        const points = row[1].replace(/"/g, '').trim();
-                        const rank = i;
+                        // Column index 2 is A&B's points; convert to number for sorting
+                        const points = parseInt(row[2].replace(/"/g, '').trim()) || 0;
 
-                        const tr = document.createElement('tr');
-                        tr.innerHTML = `
-                            <td>${rank}</td>
-                            <td>${name}</td>
-                            <td>${points}</td>
-                        `;
-                        tableBody.appendChild(tr);
+                        students.push({ name, points });
                     }
                 }
+
+                // Sort students automatically from highest points to lowest points
+                students.sort((a, b) => b.points - a.points);
+
+                const tableBody = document.getElementById('leaderboard-body');
+                tableBody.innerHTML = '';
+
+                // Build the table rows dynamically
+                students.forEach((student, index) => {
+                    const rank = index + 1;
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${rank}</td>
+                        <td>${student.name}</td>
+                        <td>${student.points}</td>
+                    `;
+                    tableBody.appendChild(tr);
+                });
+
             } catch (error) {
                 console.error('Error fetching data:', error);
                 document.getElementById('leaderboard-body').innerHTML = '<tr><td colspan="3">Error loading leaderboard data.</td></tr>';
